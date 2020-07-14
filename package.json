@@ -1,0 +1,16 @@
+{
+  "name": "availabilty-notifier",
+  "version": "1.0.0",
+  "description": "Goes to a website, checks if an element is no longer visible and if it isn't then send an notification to Slack.",
+  "main": "index.js",
+  "author": "Edwin Joseph",
+  "license": "MIT",
+  "dependencies": {
+    "@slack/webhook": "^5.0.3",
+    "crawler": "^1.2.2",
+    "dotenv": "^8.2.0",
+    "firebase-admin": "^8.13.0",
+    "short-hash": "^1.0.0",
+    "yargs": "^15.4.1"
+  }
+}
