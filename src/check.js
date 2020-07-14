@@ -7,7 +7,37 @@ const hash = require("short-hash")
 const Config = require('./config');
 const sendNotification = require("./send-notification");
 
-module.exports = (url, elementQuery) => {
+const elementExists = (url, elementQuery, config) => {
+  const crawl = new Crawler({
+    maxConnections: 1,  
+  })
+
+  return new Promise((resolve, reject) => {
+    crawl.queue({
+      uri: url,
+      callback: async (err, res, done) => {
+        if (err || res.statusCode !== 200) {
+          sendNotification(`*Check availability failed*\nPage crawling failed on: ${url}`, config);
+          reject(err)
+          return done();
+        }
+
+        const el = res.$(elementQuery);
+        const exists = el.length > 0;
+        
+        resolve(exists)
+        done()
+      }
+    });
+  })
+}
+
+const notificationSent = async (document) => {
+  const { exists } = await document.get();
+  return exists;
+}
+
+module.exports = async (url, elementQuery) => {
   const config = new Config(process.env);
 
   const firebase = admin.initializeApp({
@@ -18,38 +48,21 @@ module.exports = (url, elementQuery) => {
   const db = firebase.firestore();
   const collection = db.collection('websites');
 
-  const crawl = new Crawler({
-    maxConnections: 1,  
-  })
+  try {
+    if (await elementExists(url, elementQuery, config))
+      return console.log('item not ready yet');
 
-  crawl.queue({
-    uri: url,
-    callback: async (err, res, done) => {
-      if (err || res.statusCode !== 200) {
-        throw new Error(`Unable to load url: "${url}"`);
-      }
+    const hashed = hash(`${url}:${elementQuery}`);
+    const document = collection.doc(hashed);
 
-      const el = res.$(elementQuery);
-      const elExists = el.length > 0;
-      
-      if (!elExists) {
-        const hashed = hash(`${url}:${elementQuery}`);
-        const document = collection.doc(hashed);
-        const res = await collection.doc(hashed).get();
-        if (!res.exists) {
-          sendNotification(url, { webhook: config.slack.webhook });
-          document.set({ url, elementQuery, notified: true });
-        }
-        console.log('notification already sent');
-        return done();
-      }
-
-      console.log('item not ready yet');
-      return done();
-    }
-  })
-
-  crawl.on('drain', function() {
+    if (await notificationSent(document))
+      return console.log('notification already sent');
+    
+    sendNotification(`You are now able to purchase your item: ${url}`, config);
+    document.set({ url, elementQuery, notified: true });
+  } catch (err) {
+    console.error(err);
+  } finally {
     firebase.delete();
-  });
+  }
 }
