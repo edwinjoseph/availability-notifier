@@ -2,7 +2,7 @@
 const check = require('./src/check');
 
 require('yargs')
-  .command('check <url> <elementQuery>', 'navigate to url to find element on page', (yargs) => {
+  .command('$0 <url> <elementQuery>', 'navigate to url to find element on page', (yargs) => {
     yargs
       .positional('url', {
         describe: 'an aboslute url',
