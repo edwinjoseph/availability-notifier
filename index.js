@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+const { execSync } = require('child_process');
 const check = require('./src/check');
 
 require('yargs')
@@ -13,6 +14,8 @@ require('yargs')
         type: 'string'
       })
   }, ({ url, elementQuery }) => {
+    const stdout = execSync('curl https://ipecho.net/plain');
+    console.log(`Public IP: ${stdout}`);
     check(url, elementQuery);
   })
   .argv
