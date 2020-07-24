@@ -18,7 +18,7 @@ const elementExists = (url, elementQuery, config) => {
       callback: async (err, res, done) => {
         if (err || res.statusCode !== 200) {
           sendNotification(`*Check availability failed*\nPage crawling failed on: ${url}`, config);
-          reject(err)
+          reject(err || res.statusCode)
           return done();
         }
 
